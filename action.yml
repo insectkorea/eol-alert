@@ -1,0 +1,19 @@
+name: 'EOL Alert'
+description: 'A GitHub Action to alert EOL of major software versions to messaging channels'
+author: 'Jeongmyeong Lee'
+inputs:
+  slack-webhook-url:
+    description: 'Slack Webhook URL to send alerts to'
+    required: false
+  discord-webhook-url:
+    description: 'Discord Webhook URL to send alerts to'
+    required: false
+  teams-webhook-url:
+    description: 'Microsoft Teams Webhook URL to send alerts to'
+    required: false
+  language:
+    description: 'Programming language to check EOL for (e.g., golang, node)'
+    required: true
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
