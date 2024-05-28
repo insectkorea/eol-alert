@@ -1,6 +1,9 @@
 name: 'EOL Alert'
 description: 'A GitHub Action to alert EOL of major software versions to messaging channels'
 author: 'Jeongmyeong Lee'
+branding:
+  icon: 'alert-circle'
+  color: 'gray-dark'
 inputs:
   slack-webhook-url:
     description: 'Slack Webhook URL to send alerts to'
