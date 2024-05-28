@@ -13,7 +13,6 @@
         "type": "git",
         "url": "https://github.com/insectkorea/eol-alert.git"
     },
-    "type": "module",
     "keywords": [
         "github-action",
         "end-of-life",
