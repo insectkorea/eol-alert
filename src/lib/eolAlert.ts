@@ -89,20 +89,19 @@ function createAlertMessage(
   );
 
   if (eolDate < today) {
-    return `*[Action Required on ${repoName}]* Version upgrade required for ${language} version ${currentVersionInfo.cycle}.
-  *${language} version ${currentVersionInfo.cycle}* reached EOL on ${currentVersionInfo.eol}. 
-  Latest release of current version: ${currentVersionInfo.latest} on ${currentVersionInfo.latestReleaseDate}.
-  Latest release of latest version: ${latestVersionInfo.latest} on ${latestVersionInfo.latestReleaseDate}.`;
+    return `:warning: *[Action Required on ${repoName}]* :warning: 
+  :arrow_forward: **${language} version ${currentVersionInfo.cycle}** reached EOL on ${currentVersionInfo.eol}.
+  :arrow_forward: Latest release of current version: ${currentVersionInfo.latest} on ${currentVersionInfo.latestReleaseDate}.
+  :arrow_forward: Latest release of latest version: ${latestVersionInfo.latest} on ${latestVersionInfo.latestReleaseDate}.`;
   } else if (daysUntilEOL <= 90) {
-    // Alert EOL 90 days before
-    return `*[Action Required on ${repoName}]* Version will reach EOL soon for ${language} version ${currentVersionInfo.cycle}.
-  *${language} version ${currentVersionInfo.cycle}* will reach EOL on ${currentVersionInfo.eol} (in ${daysUntilEOL} days).
-  Latest release: ${currentVersionInfo.latest} on ${currentVersionInfo.latestReleaseDate}.
-  Latest release of latest version: ${latestVersionInfo.latest} on ${latestVersionInfo.latestReleaseDate}.`;
+    return `:calendar: *[Action Required on ${repoName}]* :calendar: 
+  :arrow_forward: **${language} version ${currentVersionInfo.cycle}** will reach EOL on ${currentVersionInfo.eol} (in ${daysUntilEOL} days).
+  :arrow_forward: Latest release: ${currentVersionInfo.latest} on ${currentVersionInfo.latestReleaseDate}.
+  :arrow_forward: Latest release of latest version: ${latestVersionInfo.latest} on ${latestVersionInfo.latestReleaseDate}.`;
   } else {
-    return `${language} version ${currentVersionInfo.cycle} in ${repoName} will reach EOL on ${currentVersionInfo.eol}.
-  Latest release: ${currentVersionInfo.latest} on ${currentVersionInfo.latestReleaseDate}.
-  Latest release of latest version: ${latestVersionInfo.latest} on ${latestVersionInfo.latestReleaseDate}.`;
+    return `:information_source: **${language} version ${currentVersionInfo.cycle}** in ${repoName} will reach EOL on ${currentVersionInfo.eol}.
+  :arrow_forward: Latest release: ${currentVersionInfo.latest} on ${currentVersionInfo.latestReleaseDate}.
+  :arrow_forward: Latest release of latest version: ${latestVersionInfo.latest} on ${latestVersionInfo.latestReleaseDate}.`;
   }
 }
 

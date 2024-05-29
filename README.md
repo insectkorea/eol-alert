@@ -1,6 +1,6 @@
 # EOL Alert GitHub Action
 
-EOL Alert is a GitHub Action that alerts you about the End-of-Life (EOL) of major software versions to multiple messaging channels, including Slack, Discord, Microsoft Teams, and Google Chat.
+EOL Alert is a GitHub Action that alerts you about the End-of-Life (EOL) of major software versions to multiple messaging channels, including Slack, Discord, and Microsoft Teams.
 
 ![CI](https://github.com/insectkorea/eol-alert/actions/workflows/ci.yml/badge.svg)
 
@@ -12,11 +12,11 @@ EOL Alert is a GitHub Action that alerts you about the End-of-Life (EOL) of majo
 
 ## Supported Languages
 
-- Go
-- Node.js
-- Python
-- Ruby
-- Rust
+- Go (go)
+- Node.js (nodejs)
+- Python (python)
+- Ruby (ruby)
+- Rust (rust)
 
 ## Supported Channels
 
@@ -50,18 +50,16 @@ jobs:
           slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
           discord-webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
           teams-webhook-url: ${{ secrets.TEAMS_WEBHOOK_URL }}
-          google-chat-webhook-url: ${{ secrets.GOOGLE_CHAT_WEBHOOK_URL }}
 ```
 
 ## Inputs
 
-| Name                      | Description                           | Required | Default |
-| ------------------------- | ------------------------------------- | -------- | ------- |
-| `language`                | Programming language to check for EOL | Yes      |         |
-| `slack-webhook-url`       | Webhook URL for Slack                 | No       |         |
-| `discord-webhook-url`     | Webhook URL for Discord               | No       |         |
-| `teams-webhook-url`       | Webhook URL for Microsoft Teams       | No       |         |
-| `google-chat-webhook-url` | Webhook URL for Google Chat           | No       |         |
+| Name                  | Description                           | Required | Default |
+| --------------------- | ------------------------------------- | -------- | ------- |
+| `language`            | Programming language to check for EOL | Yes      |         |
+| `slack-webhook-url`   | Webhook URL for Slack                 | No       |         |
+| `discord-webhook-url` | Webhook URL for Discord               | No       |         |
+| `teams-webhook-url`   | Webhook URL for Microsoft Teams       | No       |         |
 
 ## Example
 

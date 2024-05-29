@@ -88,9 +88,7 @@ describe("checkEOLVersions", () => {
       "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX",
       {
         text: expect.stringContaining(
-          `golang version 1.14 in test-repo will reach EOL on 2025-02-06.
-  Latest release: 1.14.14 on 2023-02-06.
-  Latest release of latest version: 1.14.14 on 2023-02-06.`,
+          "will reach EOL on 2025-02-06.",
         ),
       },
     );
