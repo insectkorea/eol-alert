@@ -10,7 +10,7 @@ import assert from "assert";
 /**
  * Main function to check EOL versions and send alerts
  */
-export async function checkEOLVersions() {
+export async function checkEOLVersions(repoName: string) {
   const languageInput = core.getInput("language");
   if (!languageInput) {
     throw new Error("Language input is required");
@@ -45,6 +45,8 @@ export async function checkEOLVersions() {
       (v: VersionInfo) => v.cycle === currentVersion,
     );
 
+    const latestVersionInfo = response.data[0];
+
     if (!currentVersionInfo) {
       console.log(
         `Current version ${currentVersion} not found in the EOL data.`,
@@ -56,7 +58,12 @@ export async function checkEOLVersions() {
     if (typeof currentVersionInfo.eol === "boolean") {
       return;
     }
-    const message = createAlertMessage(currentVersionInfo);
+    const message = createAlertMessage(
+      currentVersionInfo,
+      latestVersionInfo,
+      language,
+      repoName,
+    );
     await sendAlerts(webhookUrls, message);
   } catch (error) {
     console.error("Error fetching versions or sending alert:", error);
@@ -68,7 +75,12 @@ export async function checkEOLVersions() {
  * @param currentVersionInfo - Information about the current version
  * @returns Alert message string
  */
-function createAlertMessage(currentVersionInfo: VersionInfo): string {
+function createAlertMessage(
+  currentVersionInfo: VersionInfo,
+  latestVersionInfo: VersionInfo,
+  language: LanguageNames,
+  repoName: string,
+): string {
   assert(typeof currentVersionInfo.eol === "string", "EOL must be a string");
   const eolDate = new Date(currentVersionInfo.eol);
   const today = new Date();
@@ -77,12 +89,20 @@ function createAlertMessage(currentVersionInfo: VersionInfo): string {
   );
 
   if (eolDate < today) {
-    return `*Version ${currentVersionInfo.cycle}* reached EOL on ${currentVersionInfo.eol}. Latest release: ${currentVersionInfo.latest} on ${currentVersionInfo.latestReleaseDate}`;
+    return `*[Action Required on ${repoName}]* Version upgrade required for ${language} version ${currentVersionInfo.cycle}.
+  *${language} version ${currentVersionInfo.cycle}* reached EOL on ${currentVersionInfo.eol}. 
+  Latest release of current version: ${currentVersionInfo.latest} on ${currentVersionInfo.latestReleaseDate}.
+  Latest release of latest version: ${latestVersionInfo.latest} on ${latestVersionInfo.latestReleaseDate}.`;
   } else if (daysUntilEOL <= 90) {
     // Alert EOL 90 days before
-    return `*Version ${currentVersionInfo.cycle}* will reach EOL on ${currentVersionInfo.eol} (in ${daysUntilEOL} days). Latest release: ${currentVersionInfo.latest} on ${currentVersionInfo.latestReleaseDate}`;
+    return `*[Action Required on ${repoName}]* Version will reach EOL soon for ${language} version ${currentVersionInfo.cycle}.
+  *${language} version ${currentVersionInfo.cycle}* will reach EOL on ${currentVersionInfo.eol} (in ${daysUntilEOL} days).
+  Latest release: ${currentVersionInfo.latest} on ${currentVersionInfo.latestReleaseDate}.
+  Latest release of latest version: ${latestVersionInfo.latest} on ${latestVersionInfo.latestReleaseDate}.`;
   } else {
-    return `*Version ${currentVersionInfo.cycle}* is currently supported. It will reach EOL on ${currentVersionInfo.eol}. Latest release: ${currentVersionInfo.latest} on ${currentVersionInfo.latestReleaseDate}`;
+    return `${language} version ${currentVersionInfo.cycle} in ${repoName} will reach EOL on ${currentVersionInfo.eol}.
+  Latest release: ${currentVersionInfo.latest} on ${currentVersionInfo.latestReleaseDate}.
+  Latest release of latest version: ${latestVersionInfo.latest} on ${latestVersionInfo.latestReleaseDate}.`;
   }
 }
 
@@ -127,4 +147,15 @@ function getWebhookUrls(): { [channel: string]: string } {
   }
 
   return webhookUrls;
+}
+
+export function getRepositoryName(): string {
+  const githubRepository = process.env.GITHUB_REPOSITORY;
+
+  if (!githubRepository) {
+    throw new Error("GITHUB_REPOSITORY environment variable is not set");
+  }
+
+  const [owner, repo] = githubRepository.split("/");
+  return repo;
 }

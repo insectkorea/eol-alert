@@ -17,6 +17,7 @@ jest.mock("path");
 const mockedAxios = jest.mocked(axios);
 const mockedCore = jest.mocked(core);
 const mockedFs = jest.mocked(fs);
+const repoName = "test-repo";
 
 describe("checkEOLVersions", () => {
   beforeEach(() => {
@@ -47,13 +48,12 @@ describe("checkEOLVersions", () => {
       ],
     });
 
-    await checkEOLVersions();
+    await checkEOLVersions(repoName);
 
     expect(mockedAxios.post).toHaveBeenCalledWith(
       "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX",
       {
-        text: expect.stringContaining(
-          "*Version 1.15* reached EOL on 2023-02-06",
+        text: expect.stringContaining("[Action Required on test-repo]",
         ),
       },
     );
@@ -83,13 +83,15 @@ describe("checkEOLVersions", () => {
       ],
     });
 
-    await checkEOLVersions();
+    await checkEOLVersions(repoName);
 
     expect(mockedAxios.post).toHaveBeenCalledWith(
       "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX",
       {
         text: expect.stringContaining(
-          "*Version 1.14* is currently supported. It will reach EOL on 2025-02-06",
+          `golang version 1.14 in test-repo will reach EOL on 2025-02-06.
+  Latest release: 1.14.14 on 2023-02-06.
+  Latest release of latest version: 1.14.14 on 2023-02-06.`,
         ),
       },
     );
@@ -119,7 +121,7 @@ describe("checkEOLVersions", () => {
       ],
     });
 
-    await checkEOLVersions();
+    await checkEOLVersions(repoName);
 
     expect(mockedAxios.post).not.toHaveBeenCalled();
     expect(console.log).toHaveBeenCalledWith(
@@ -137,7 +139,7 @@ describe("checkEOLVersions", () => {
       }
     });
 
-    await expect(checkEOLVersions()).rejects.toThrow(
+    await expect(checkEOLVersions(repoName)).rejects.toThrow(
       "At least one webhook URL must be provided",
     );
   });
@@ -152,7 +154,7 @@ describe("checkEOLVersions", () => {
       }
     });
 
-    await expect(checkEOLVersions()).rejects.toThrow(
+    await expect(checkEOLVersions(repoName)).rejects.toThrow(
       "Language input is required",
     );
   });
