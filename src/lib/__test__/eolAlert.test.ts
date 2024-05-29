@@ -87,9 +87,7 @@ describe("checkEOLVersions", () => {
     expect(mockedAxios.post).toHaveBeenCalledWith(
       "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX",
       {
-        text: expect.stringContaining(
-          "will reach EOL on 2025-02-06.",
-        ),
+        text: expect.stringContaining("will reach EOL on 2025-02-06."),
       },
     );
   });
