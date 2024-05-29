@@ -53,8 +53,7 @@ describe("checkEOLVersions", () => {
     expect(mockedAxios.post).toHaveBeenCalledWith(
       "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX",
       {
-        text: expect.stringContaining("[Action Required on test-repo]",
-        ),
+        text: expect.stringContaining("[Action Required on test-repo]"),
       },
     );
   });

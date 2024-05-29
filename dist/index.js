@@ -29619,11 +29619,11 @@ Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
       command_1.issue("echo", enabled ? "on" : "off");
     }
     exports2.setCommandEcho = setCommandEcho;
-    function setFailed(message) {
+    function setFailed2(message) {
       process.exitCode = ExitCode.Failure;
       error(message);
     }
-    exports2.setFailed = setFailed;
+    exports2.setFailed = setFailed2;
     function isDebug() {
       return process.env["RUNNER_DEBUG"] === "1";
     }
@@ -33137,7 +33137,7 @@ var LanguageFactory = class {
 
 // src/lib/eolAlert.ts
 var import_assert = __toESM(require("assert"));
-async function checkEOLVersions() {
+async function checkEOLVersions(repoName) {
   const languageInput = core.getInput("language");
   if (!languageInput) {
     throw new Error("Language input is required");
@@ -33162,6 +33162,7 @@ async function checkEOLVersions() {
     const currentVersionInfo = response.data.find(
       (v) => v.cycle === currentVersion
     );
+    const latestVersionInfo = response.data[0];
     if (!currentVersionInfo) {
       console.log(
         `Current version ${currentVersion} not found in the EOL data.`
@@ -33171,13 +33172,18 @@ async function checkEOLVersions() {
     if (typeof currentVersionInfo.eol === "boolean") {
       return;
     }
-    const message = createAlertMessage(currentVersionInfo);
+    const message = createAlertMessage(
+      currentVersionInfo,
+      latestVersionInfo,
+      language,
+      repoName
+    );
     await sendAlerts(webhookUrls, message);
   } catch (error) {
     console.error("Error fetching versions or sending alert:", error);
   }
 }
-function createAlertMessage(currentVersionInfo) {
+function createAlertMessage(currentVersionInfo, latestVersionInfo, language, repoName) {
   (0, import_assert.default)(typeof currentVersionInfo.eol === "string", "EOL must be a string");
   const eolDate = new Date(currentVersionInfo.eol);
   const today = /* @__PURE__ */ new Date();
@@ -33185,11 +33191,19 @@ function createAlertMessage(currentVersionInfo) {
     (eolDate.getTime() - today.getTime()) / (1e3 * 60 * 60 * 24)
   );
   if (eolDate < today) {
-    return `*Version ${currentVersionInfo.cycle}* reached EOL on ${currentVersionInfo.eol}. Latest release: ${currentVersionInfo.latest} on ${currentVersionInfo.latestReleaseDate}`;
+    return `*[Action Required on ${repoName}]* Version upgrade required for ${language} version ${currentVersionInfo.cycle}.
+  *${language} version ${currentVersionInfo.cycle}* reached EOL on ${currentVersionInfo.eol}. 
+  Latest release of current version: ${currentVersionInfo.latest} on ${currentVersionInfo.latestReleaseDate}.
+  Latest release of latest version: ${latestVersionInfo.latest} on ${latestVersionInfo.latestReleaseDate}.`;
   } else if (daysUntilEOL <= 90) {
-    return `*Version ${currentVersionInfo.cycle}* will reach EOL on ${currentVersionInfo.eol} (in ${daysUntilEOL} days). Latest release: ${currentVersionInfo.latest} on ${currentVersionInfo.latestReleaseDate}`;
+    return `*[Action Required on ${repoName}]* Version will reach EOL soon for ${language} version ${currentVersionInfo.cycle}.
+  *${language} version ${currentVersionInfo.cycle}* will reach EOL on ${currentVersionInfo.eol} (in ${daysUntilEOL} days).
+  Latest release: ${currentVersionInfo.latest} on ${currentVersionInfo.latestReleaseDate}.
+  Latest release of latest version: ${latestVersionInfo.latest} on ${latestVersionInfo.latestReleaseDate}.`;
   } else {
-    return `*Version ${currentVersionInfo.cycle}* is currently supported. It will reach EOL on ${currentVersionInfo.eol}. Latest release: ${currentVersionInfo.latest} on ${currentVersionInfo.latestReleaseDate}`;
+    return `${language} version ${currentVersionInfo.cycle} in ${repoName} will reach EOL on ${currentVersionInfo.eol}.
+  Latest release: ${currentVersionInfo.latest} on ${currentVersionInfo.latestReleaseDate}.
+  Latest release of latest version: ${latestVersionInfo.latest} on ${latestVersionInfo.latestReleaseDate}.`;
   }
 }
 async function sendAlerts(webhookUrls, message) {
@@ -33217,9 +33231,31 @@ function getWebhookUrls() {
   }
   return webhookUrls;
 }
+function getRepositoryName() {
+  const githubRepository = process.env.GITHUB_REPOSITORY;
+  if (!githubRepository) {
+    throw new Error("GITHUB_REPOSITORY environment variable is not set");
+  }
+  const [, repo] = githubRepository.split("/");
+  return repo;
+}
 
 // src/index.ts
-checkEOLVersions();
+var core2 = __toESM(require_core());
+async function run() {
+  try {
+    const repoName = getRepositoryName();
+    console.log(`The repository name is: ${repoName}`);
+    await checkEOLVersions(repoName);
+  } catch (error) {
+    if (error instanceof Error) {
+      core2.setFailed(error.message);
+    } else {
+      core2.setFailed("An unknown error occurred");
+    }
+  }
+}
+run();
 /*! Bundled license information:
 
 mime-db/index.js:

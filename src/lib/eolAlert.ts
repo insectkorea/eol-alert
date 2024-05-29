@@ -156,6 +156,6 @@ export function getRepositoryName(): string {
     throw new Error("GITHUB_REPOSITORY environment variable is not set");
   }
 
-  const [owner, repo] = githubRepository.split("/");
+  const [, repo] = githubRepository.split("/");
   return repo;
 }
