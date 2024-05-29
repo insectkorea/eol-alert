@@ -4,7 +4,7 @@
     "description": "A GitHub Action to alert EOL of major software versions to multiple messaging channels",
     "main": "dist/index.js",
     "scripts": {
-        "build": "tsc",
+        "build": "esbuild src/index.ts --bundle --platform=node --target=node20 --outfile=dist/index.js",
         "test": "jest",
         "lint": "eslint src/",
         "lint:fix": "eslint --fix src/"
@@ -33,6 +33,7 @@
         "@eslint/js": "^9.3.0",
         "@types/eslint__js": "^8.42.3",
         "@types/jest": "^29.2.3",
+        "esbuild": "^0.21.4",
         "eslint": "^9.3.0",
         "eslint-config-prettier": "^9.1.0",
         "eslint-plugin-prettier": "^5.1.3",
