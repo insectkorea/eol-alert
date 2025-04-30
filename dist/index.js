@@ -33147,19 +33147,21 @@ async function checkEOLVersions(repoName) {
     throw new Error(`Unsupported language: ${languageInput}`);
   }
   const webhookUrls = getWebhookUrls();
+  const failBuild = getFailBuild();
   const languageHandler = LanguageFactory.create(language);
   const currentVersion = await languageHandler.getVersion();
   const endOfLifeApiUrl = `https://endoflife.date/api/${language}.json`;
-  if (Object.keys(webhookUrls).length === 0) {
+  if (!failBuild && Object.keys(webhookUrls).length === 0) {
     throw new Error("At least one webhook URL must be provided");
   }
+  let currentVersionInfo;
   try {
     const response = await axios_default.get(endOfLifeApiUrl);
     if (response.data.length === 0) {
       console.log("No versions found");
       return;
     }
-    const currentVersionInfo = response.data.find(
+    currentVersionInfo = response.data.find(
       (v) => v.cycle === currentVersion
     );
     const latestVersionInfo = response.data[0];
@@ -33181,7 +33183,14 @@ async function checkEOLVersions(repoName) {
     await sendAlerts(webhookUrls, message);
   } catch (error) {
     console.error("Error fetching versions or sending alert:", error);
+    return;
   }
+  const eol = isEOL(currentVersionInfo);
+  const statusMsg = "End of life check " + (eol ? "FAILED" : "ok");
+  if (eol && failBuild) {
+    throw new Error(statusMsg);
+  }
+  console.log(statusMsg);
 }
 function createAlertMessage(currentVersionInfo, latestVersionInfo, language, repoName) {
   (0, import_assert.default)(typeof currentVersionInfo.eol === "string", "EOL must be a string");
@@ -33205,6 +33214,12 @@ function createAlertMessage(currentVersionInfo, latestVersionInfo, language, rep
   :arrow_forward: Latest release: ${currentVersionInfo.latest} on ${currentVersionInfo.latestReleaseDate}.
   :arrow_forward: Latest release of latest version: ${latestVersionInfo.latest} on ${latestVersionInfo.latestReleaseDate}.`;
   }
+}
+function isEOL(versionInfo) {
+  (0, import_assert.default)(typeof versionInfo.eol === "string", "EOL must be a string");
+  const eolDate = new Date(versionInfo.eol);
+  const today = /* @__PURE__ */ new Date();
+  return eolDate < today;
 }
 async function sendAlerts(webhookUrls, message) {
   for (const [channel, webhookUrl] of Object.entries(webhookUrls)) {
@@ -33231,6 +33246,9 @@ function getWebhookUrls() {
   }
   return webhookUrls;
 }
+function getFailBuild() {
+  return core.getInput("fail-build").toLowerCase() === "true";
+}
 function getRepositoryName() {
   const githubRepository = process.env.GITHUB_REPOSITORY;
   if (!githubRepository) {
@@ -33251,6 +33269,7 @@ async function run() {
     if (error instanceof Error) {
       core2.setFailed(error.message);
     } else {
+      console.error(error);
       core2.setFailed("An unknown error occurred");
     }
   }

@@ -11,6 +11,7 @@ async function run() {
     if (error instanceof Error) {
       core.setFailed(error.message);
     } else {
+      console.error(error);
       core.setFailed("An unknown error occurred");
     }
   }

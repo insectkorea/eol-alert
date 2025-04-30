@@ -17,6 +17,10 @@ inputs:
   language:
     description: 'Programming language to check EOL for (e.g., golang, node)'
     required: true
+  fail-build:
+    description: "Set 'true' to fail build when EOL check fails"
+    required: false
+    default: 'false'
 runs:
   using: 'node20'
   main: 'dist/index.js'
