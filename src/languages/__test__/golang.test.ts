@@ -45,4 +45,14 @@ describe("GoLang", () => {
 
     expect(version).toBe("1.16");
   });
+
+  it("should return the major and minor version numbers only", async () => {
+    mockedPath.join.mockReturnValue("/fake/path/go.mod");
+    mockedFs.existsSync.mockReturnValue(true);
+    mockedFs.readFileSync.mockReturnValue("module example.com\ngo 1.22.12");
+
+    const version = await goLang.getVersion();
+
+    expect(version).toBe("1.22");
+  });
 });

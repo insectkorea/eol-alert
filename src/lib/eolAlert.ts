@@ -22,15 +22,16 @@ export async function checkEOLVersions(repoName: string) {
   }
 
   const webhookUrls = getWebhookUrls();
+  const failBuild = getFailBuild();
 
   const languageHandler = LanguageFactory.create(language);
   const currentVersion = await languageHandler.getVersion();
+  console.log(`Found ${language} version: ${currentVersion}`);
 
   const endOfLifeApiUrl = `https://endoflife.date/api/${language}.json`;
 
-  if (Object.keys(webhookUrls).length === 0) {
-    throw new Error("At least one webhook URL must be provided");
-  }
+  let currentVersionInfo: VersionInfo;
+
   try {
     const response = (await axios.get(endOfLifeApiUrl)) as {
       data: EOLResponse;
@@ -41,9 +42,9 @@ export async function checkEOLVersions(repoName: string) {
       return;
     }
 
-    const currentVersionInfo = response.data.find(
+    currentVersionInfo = response.data.find(
       (v: VersionInfo) => v.cycle === currentVersion,
-    );
+    ) as VersionInfo;
 
     const latestVersionInfo = response.data[0];
 
@@ -66,14 +67,30 @@ export async function checkEOLVersions(repoName: string) {
     );
     await sendAlerts(webhookUrls, message);
   } catch (error) {
-    console.error("Error fetching versions or sending alert:", error);
+    core.error(`Error fetching versions or sending alert: ${error}`);
+    return;
   }
+
+  const eol = isEOL(currentVersionInfo);
+  let statusMsg: string;
+  if (eol) {
+    statusMsg = `End of life check for ${language} FAILED, EOL date was ${currentVersionInfo.eol}`;
+    core.warning(statusMsg);
+    if (failBuild) {
+      // Fail build action.
+      throw new Error(statusMsg);
+    }
+  } else {
+    statusMsg = `End of life check for ${language} ok`;
+  }
+  console.log(statusMsg);
 }
 
 /**
  * Create an alert message based on the current version's EOL status
  * @param currentVersionInfo - Information about the current version
  * @returns Alert message string
+ * @throws RangeError Invalid EOL date
  */
 function createAlertMessage(
   currentVersionInfo: VersionInfo,
@@ -83,6 +100,10 @@ function createAlertMessage(
 ): string {
   assert(typeof currentVersionInfo.eol === "string", "EOL must be a string");
   const eolDate = new Date(currentVersionInfo.eol);
+  assert(
+    !Number.isNaN(eolDate.getTime()),
+    `EOL is an invalid date: "${currentVersionInfo.eol}"`,
+  );
   const today = new Date();
   const daysUntilEOL = Math.ceil(
     (eolDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
@@ -103,6 +124,23 @@ function createAlertMessage(
   :arrow_forward: Latest release: ${currentVersionInfo.latest} on ${currentVersionInfo.latestReleaseDate}.
   :arrow_forward: Latest release of latest version: ${latestVersionInfo.latest} on ${latestVersionInfo.latestReleaseDate}.`;
   }
+}
+
+/**
+ * Check if version is EOL
+ * @param versionInfo
+ * @returns boolean
+ * @throws RangeError Invalid EOL date
+ */
+function isEOL(versionInfo: VersionInfo): boolean {
+  assert(typeof versionInfo.eol === "string", "EOL must be a string");
+  const eolDate = new Date(versionInfo.eol);
+  assert(
+    !Number.isNaN(eolDate.getTime()),
+    `EOL is an invalid date: "${versionInfo.eol}"`,
+  );
+  const today = new Date();
+  return eolDate < today;
 }
 
 /**
@@ -146,6 +184,14 @@ function getWebhookUrls(): { [channel: string]: string } {
   }
 
   return webhookUrls;
+}
+
+/**
+ * Get fail-build flag
+ * @returns Boolean
+ */
+function getFailBuild(): boolean {
+  return core.getInput("fail-build").toLowerCase() === "true";
 }
 
 export function getRepositoryName(): string {

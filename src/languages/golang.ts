@@ -11,7 +11,7 @@ export class GoLang implements Language {
     }
 
     const modFileContent = fs.readFileSync(modFilePath, "utf8");
-    const versionMatch = modFileContent.match(/^go\s+([\d.]+)/m);
+    const versionMatch = modFileContent.match(/^go\s+(\d+\.\d+)/m);
     return versionMatch ? versionMatch[1] : undefined;
   }
 }

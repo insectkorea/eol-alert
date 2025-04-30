@@ -19,6 +19,21 @@ const mockedCore = jest.mocked(core);
 const mockedFs = jest.mocked(fs);
 const repoName = "test-repo";
 
+const fixtureAxiosEOLResp = {
+  data: [
+    {
+      cycle: "1.15",
+      eol: "2023-02-06",
+      latest: "1.15.14",
+      latestReleaseDate: "2023-02-06",
+    },
+  ],
+};
+
+const futureEOLDate = formatDate(
+  new Date(new Date().getTime() + 90 * 24 * 60 * 60 * 1000),
+);
+
 describe("checkEOLVersions", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -75,7 +90,7 @@ describe("checkEOLVersions", () => {
       data: [
         {
           cycle: "1.14",
-          eol: "2025-02-06",
+          eol: futureEOLDate,
           latest: "1.14.14",
           latestReleaseDate: "2023-02-06",
         },
@@ -87,9 +102,10 @@ describe("checkEOLVersions", () => {
     expect(mockedAxios.post).toHaveBeenCalledWith(
       "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX",
       {
-        text: expect.stringContaining("will reach EOL on 2025-02-06."),
+        text: expect.stringContaining(`will reach EOL on ${futureEOLDate}`),
       },
     );
+    expect(console.log).toHaveBeenCalledWith("End of life check for golang ok");
   });
 
   it("should handle when the current version is not found in the EOL data", async () => {
@@ -109,7 +125,7 @@ describe("checkEOLVersions", () => {
       data: [
         {
           cycle: "1.14",
-          eol: "2025-02-06",
+          eol: futureEOLDate,
           latest: "1.14.14",
           latestReleaseDate: "2023-02-06",
         },
@@ -121,21 +137,6 @@ describe("checkEOLVersions", () => {
     expect(mockedAxios.post).not.toHaveBeenCalled();
     expect(console.log).toHaveBeenCalledWith(
       "Current version 1.13 not found in the EOL data.",
-    );
-  });
-
-  it("should throw an error if no webhook URLs are provided", async () => {
-    mockedCore.getInput.mockImplementation((name: string) => {
-      switch (name) {
-        case "language":
-          return "golang";
-        default:
-          return "";
-      }
-    });
-
-    await expect(checkEOLVersions(repoName)).rejects.toThrow(
-      "At least one webhook URL must be provided",
     );
   });
 
@@ -154,3 +155,75 @@ describe("checkEOLVersions", () => {
     );
   });
 });
+
+describe("fail-build", () => {
+  it("should throw an error when EOL and fail-build=true", async () => {
+    mockedCore.getInput.mockImplementation((name: string) => {
+      switch (name) {
+        case "language":
+          return "golang";
+        case "fail-build":
+          return "true";
+        default:
+          return "";
+      }
+    });
+    mockedFs.existsSync.mockReturnValue(true);
+    mockedFs.readFileSync.mockReturnValue("module example.com\n\ngo 1.15");
+    mockedAxios.get.mockResolvedValue(fixtureAxiosEOLResp);
+
+    await expect(checkEOLVersions(repoName)).rejects.toThrow(
+      "End of life check for golang FAILED",
+    );
+  });
+
+  it("succeeds when EOL and fail-build=false", async () => {
+    mockedCore.getInput.mockImplementation((name: string) => {
+      switch (name) {
+        case "language":
+          return "golang";
+        case "slack-webhook-url":
+          return "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX";
+        case "fail-build":
+          return "false";
+        default:
+          return "";
+      }
+    });
+    mockedFs.existsSync.mockReturnValue(true);
+    mockedFs.readFileSync.mockReturnValue("module example.com\n\ngo 1.15");
+    mockedAxios.get.mockResolvedValue(fixtureAxiosEOLResp);
+
+    await checkEOLVersions(repoName);
+
+    expect(console.log).toHaveBeenCalledWith(
+      `End of life check for golang FAILED, EOL date was ${fixtureAxiosEOLResp.data[0].eol}`,
+    );
+  });
+
+  it("succeeds when EOL and fail-build unset", async () => {
+    mockedCore.getInput.mockImplementation((name: string) => {
+      switch (name) {
+        case "language":
+          return "golang";
+        case "slack-webhook-url":
+          return "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX";
+        default:
+          return "";
+      }
+    });
+    mockedFs.existsSync.mockReturnValue(true);
+    mockedFs.readFileSync.mockReturnValue("module example.com\n\ngo 1.15");
+    mockedAxios.get.mockResolvedValue(fixtureAxiosEOLResp);
+
+    await checkEOLVersions(repoName);
+
+    expect(console.log).toHaveBeenCalledWith(
+      `End of life check for golang FAILED, EOL date was ${fixtureAxiosEOLResp.data[0].eol}`,
+    );
+  });
+});
+
+function formatDate(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
